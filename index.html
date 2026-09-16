@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zion Eval Generator — golden Q&A sets from your documents</title>
+<meta name="description" content="Turn pasted documentation into a golden Q&A eval set skeleton for RAG and agent testing. Free, runs fully in your browser. By Zion Tech Group.">
+<style>
+:root{--bg:#0d0a08;--card:#1c1510;--acc:#fdba74;--txt:#f7efe7;--mut:#c4ad97}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+header{padding:48px 24px 24px;text-align:center;background:linear-gradient(160deg,#3d2410,#0d0a08)}
+h1{margin:0 0 8px}.wrap{max-width:920px;margin:0 auto;padding:24px}
+.panel{background:var(--card);border:1px solid #38291a;border-radius:14px;padding:20px;margin-bottom:20px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:12px 0 4px}
+textarea,input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #46331f;background:#15100a;color:var(--txt);font-family:inherit}
+textarea{min-height:160px}
+button{margin-top:14px;padding:12px 22px;border:0;border-radius:10px;background:var(--acc);color:#241304;font-weight:700;cursor:pointer}
+pre{white-space:pre-wrap;background:#120d08;border:1px solid #38291a;border-radius:12px;padding:16px;font-size:.85rem;max-height:420px;overflow:auto}
+footer{padding:32px 24px;text-align:center;color:var(--mut);font-size:.85rem;border-top:1px solid #2a1f14;margin-top:40px}
+footer a{color:var(--acc);text-decoration:none;margin:0 8px}
+</style>
+</head>
+<body>
+<header><h1>📝 Zion Eval Question Generator</h1>
+<p>Paste documentation, get a golden Q&A eval-set skeleton (factual, multi-hop, negative, edge-case) ready for review. 100% client-side — your docs never leave the browser.</p></header>
+<div class="wrap">
+<div class="panel">
+<label>Source document (paste text)</label><textarea id="src" placeholder="Paste product docs, policy text, API reference…"></textarea>
+<label>Questions per type</label><input id="n" type="number" value="3" min="1" max="10">
+<button onclick="gen()">Generate eval set</button>
+</div>
+<div class="panel" id="result" style="display:none"><pre id="doc"></pre><button onclick="dl()">Download JSONL</button></div>
+<p style="color:var(--mut);font-size:.85rem">Tip: review and edit every generated item — golden sets need human curation. Then score your pipeline with the <a style="color:var(--acc)" href="https://ziontechgroup.com/zion-rag-eval-kit/">RAG Eval Kit</a>.</p>
+</div>
+<footer>Part of the <a href="https://ziontechgroup.com">Zion Tech Group</a> AI apps network ·
+<a href="https://ziontechgroup.com/zion-rag-eval-kit/">RAG Eval Kit</a>
+<a href="https://ziontechgroup.com/zion-mcp-finder/">MCP Finder</a>
+<a href="https://ziontechgroup.com/zion-agent-stack-builder/">Agent Stack Builder</a>
+<a href="https://ziontechgroup.com/evals-studio/">Zion Evals Studio</a></footer>
+<script>
+function sentences(t){return t.split(/(?<=[.!?])\s+/).filter(s=>s.length>40&&s.length<300);}
+function gen(){
+const src=document.getElementById('src').value.trim();const n=+document.getElementById('n').value||3;
+if(src.length<200){alert('Paste at least a few paragraphs.');return;}
+const sents=sentences(src);if(!sents.length){alert('Could not extract sentences.');return;}
+const items=[];const pick=()=>sents[Math.floor(Math.random()*sents.length)];
+const kw=s=>{const w=s.replace(/[^a-zA-Z0-9 ]/g,'').split(' ').filter(x=>x.length>5);return w[Math.floor(Math.random()*w.length)]||'this topic'};
+for(let i=0;i<n;i++){const s=pick(),k=kw(s),s2=pick();
+items.push({type:'factual',question:`According to the documentation, what does it say about "${k}"?`,reference_answer:s});
+items.push({type:'multi_hop',question:`How does "${kw(s)}" relate to "${kw(s2)}" in this documentation?`,reference_answer:s+' ||| '+s2});
+items.push({type:'negative',question:`What warranty does the documentation give for "${k}" in production use? (expect refusal if absent)`,reference_answer:'LIKELY NOT IN CORPUS — system should decline or cite absence.'});
+items.push({type:'edge_case',question:`Summarize the constraints or limits mentioned near "${k}".`,reference_answer:s});}
+const jsonl=items.map(x=>JSON.stringify(x)).join('\n');
+document.getElementById('doc').textContent=jsonl;document.getElementById('result').style.display='block';window._doc=jsonl;}
+function dl(){const b=new Blob([window._doc],{type:'application/jsonl'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='golden-eval-set.jsonl';a.click();}
+</script>
+</body>
+</html>
