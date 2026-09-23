@@ -1,6 +1,6 @@
 # Zion Eval Generator
 
-Turn documents into golden Q&A sets for LLM evals.
+LLM eval question generator — turn documents into golden Q&A sets.
 
 ## Network
 - 📚 Master catalog: [zion-app-network/CATALOG.md](https://github.com/Zion-support/zion-app-network/blob/main/CATALOG.md)
